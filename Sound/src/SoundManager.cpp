@@ -81,13 +81,13 @@ bool SoundManager::Initialize(size_t coreID) {
     // Save the Task* BEFORE PushFork so it's visible to MixLoop() the moment the worker picks it
     // up (PushFork's internal notify/condition-variable synchronization provides the
     // happens-before -- this write is sequenced on OUR thread before PushFork is even called).
-    JGL::Task* task = JGL::TaskScheduler::Instance().CreateTask([this]() { MixLoop(); });
+    JLib::Task* task = JLib::TaskScheduler::Instance().CreateTask([this]() { MixLoop(); });
     if (!task) {
         Shutdown();
         return false;
     }
     m_MixTask = task;
-    if (!JGL::TaskScheduler::Instance().PushFork((uint8_t)coreID, task)) {
+    if (!JLib::TaskScheduler::Instance().PushFork((uint8_t)coreID, task)) {
         m_MixTask = nullptr;
         Shutdown();
         return false;

@@ -7,7 +7,7 @@
 #include "../include/SoundManager.h"
 
 int main() {
-    JGL::TaskScheduler::Init();
+    JLib::TaskScheduler::Init();
 
     SoundManager sound;
     // Core 1 (1-based, matches PushFork's cpu_affinity) is pinned for the mixing loop's whole
@@ -45,7 +45,7 @@ int main() {
     std::cout << "Shutting down...\n";
     sound.Shutdown();
 
-    JGL::TaskScheduler::Instance().Join();
+    JLib::TaskScheduler::Instance().Join();
     return 0;
 }
 */

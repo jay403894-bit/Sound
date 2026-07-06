@@ -15,7 +15,7 @@
 #undef PlaySound
 #endif
 
-namespace JGL { struct Task; }
+namespace JLib { struct Task; }
 
 // Generational handle to a playing voice -- index into SoundManager's slot array plus a
 // generation counter, so a handle from a voice that already finished/was stopped can't
@@ -31,14 +31,14 @@ struct SoundHandle {
 // Two threads are involved, and they have very different jobs:
 //
 //   1. miniaudio's own WASAPI device thread (spun up internally by ma_device_start(), fully
-//      outside JGL::TaskScheduler -- the pool has no idea it exists and can't schedule onto it).
+//      outside JLib::TaskScheduler -- the pool has no idea it exists and can't schedule onto it).
 //      Its data callback does the absolute minimum: drain the ring buffer into the WASAPI
 //      buffer. ma_context_config.threadPriority = ma_thread_priority_realtime maps straight to
 //      THREAD_PRIORITY_TIME_CRITICAL on this thread (see miniaudio.h's Win32 backend), so the
 //      OS-facing side of playback is genuinely real-time-safe.
 //
 //   2. The MIXING thread -- this is the one that does actual work (decode/mix/DSP), and it's a
-//      JGL pool worker, pinned here via TaskScheduler::PushFork(). PushFork's immediate-task path
+//      JLib pool worker, pinned here via TaskScheduler::PushFork(). PushFork's immediate-task path
 //      runs a fastJob task inline on the worker's own OS-thread stack with NO fiber acquired
 //      (Thread.cpp's fast path), and marks that core's immediateCoresInUse permanently true for
 //      as long as the task runs -- so PickNextWorker() never routes ordinary pool work onto it.
@@ -59,7 +59,7 @@ public:
     ~SoundManager();
 
     // coreID matches TaskScheduler::PushFork's cpu_affinity: 1-based, 1..workerCount. Must be
-    // called after JGL::TaskScheduler::Init().
+    // called after JLib::TaskScheduler::Init().
     bool Initialize(size_t coreID);
     // Cooperatively stops the mixing task and tears down the WASAPI device/context. Safe to call
     // even if Initialize() failed partway through.
@@ -91,11 +91,11 @@ private:
     // Caller must hold m_VoicesMutex.
     bool IsValidLocked(SoundHandle handle) const;
 
-    // Runs on the forked JGL worker thread -- see the class comment above. Never calls
+    // Runs on the forked JLib worker thread -- see the class comment above. Never calls
     // WaitOnEvent*/anything that suspends (would violate the fastJob contract and throw).
     void MixLoop();
 
-    // miniaudio's device data callback -- runs on miniaudio's OWN thread, not the JGL pool.
+    // miniaudio's device data callback -- runs on miniaudio's OWN thread, not the JLib pool.
     // Just drains m_RingBuffer into pOutput; underrun (mix thread fell behind) is filled with
     // silence rather than stalling or reading garbage.
     static void DataCallback(ma_device* pDevice, void* pOutput, const void* pInput, ma_uint32 frameCount);
@@ -107,7 +107,7 @@ private:
     bool m_DeviceInitialized = false;
     bool m_RingBufferInitialized = false;
 
-    JGL::Task* m_MixTask = nullptr;
+    JLib::Task* m_MixTask = nullptr;
     std::atomic<bool> m_MixThreadStopped{ false };
 
     // One playing sound. Heap-allocated (via unique_ptr) so growing m_VoiceSlots never
@@ -153,7 +153,7 @@ private:
     // for m_FileBytes' entire lifetime (which itself must outlive every Voice -- true here since
     // it's a SoundManager member destructed after Shutdown() has already stopped the mix thread
     // and cleared every Voice).
-    JGL::AssetManager<std::vector<uint8_t>> m_FileBytes;
+    JLib::AssetManager<std::vector<uint8_t>> m_FileBytes;
 
     static constexpr ma_uint32 kSampleRate = 48000;
     static constexpr ma_uint32 kChannels = 2;
