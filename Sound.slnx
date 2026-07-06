@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Sound/Sound.vcxproj" Id="82392272-2768-49d5-b1d2-809aa36103a8" />
+</Solution>
