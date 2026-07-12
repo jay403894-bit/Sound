@@ -10,7 +10,7 @@
 #include <TaskScheduler.h>
 #include <cmath>
 #include <fstream>
-
+using namespace JLib;
 SoundManager::~SoundManager() {
     Shutdown();
 }
@@ -170,6 +170,14 @@ void SoundManager::SetVolume(SoundHandle handle, float volume) {
 bool SoundManager::IsPlaying(SoundHandle handle) const {
     std::lock_guard<std::mutex> lock(m_VoicesMutex);
     return IsValidLocked(handle);
+}
+
+bool SoundManager::IsAnythingPlaying() const {
+    std::lock_guard<std::mutex> lock(m_VoicesMutex);
+    for (const VoiceSlot& slot : m_VoiceSlots) {
+        if (slot.voice) return true;
+    }
+    return false;
 }
 
 void SoundManager::MixLoop() {
