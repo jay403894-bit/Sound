@@ -109,6 +109,7 @@ namespace JLib {
         ma_context m_Context{};
         ma_device m_Device{};
         ma_pcm_rb m_RingBuffer{};
+        std::atomic<bool> m_ShouldStop{ false }; 
         bool m_ContextInitialized = false;
         bool m_DeviceInitialized = false;
         bool m_RingBufferInitialized = false;

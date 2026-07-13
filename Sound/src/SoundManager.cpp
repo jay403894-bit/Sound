@@ -87,7 +87,7 @@ bool SoundManager::Initialize(size_t coreID) {
         return false;
     }
     m_MixTask = task;
-    if (!JLib::TaskScheduler::Instance().PushFork((uint8_t)coreID, task)) {
+    if (!JLib::TaskScheduler::Instance().PushImmediate((uint8_t)coreID, task)) {
         m_MixTask = nullptr;
         Shutdown();
         return false;
@@ -187,7 +187,7 @@ void SoundManager::MixLoop() {
     float mixBuffer[kChunkFrames * kChannels];
     float readBuffer[kChunkFrames * kChannels];
 
-    while (!m_MixTask->stopFlag.load(std::memory_order_acquire)) {
+    while (!m_ShouldStop.load(std::memory_order_acquire)) {
         ma_uint32 framesToWrite = kChunkFrames;
         void* pWriteBuffer = nullptr;
         if (ma_pcm_rb_acquire_write(&m_RingBuffer, &framesToWrite, &pWriteBuffer) != MA_SUCCESS ||
@@ -267,7 +267,7 @@ void SoundManager::MixLoop() {
 
 void SoundManager::Shutdown() {
     if (m_MixTask) {
-        m_MixTask->Stop(); // cooperative -- sets Task::stopFlag, MixLoop() checks it each iteration
+        m_ShouldStop.store(true, std::memory_order_release); 
         // Do NOT touch m_MixTask again past this point: the instant MixLoop() actually returns,
         // Thread::Worker()'s fastJob cleanup destructs and frees it back to the TaskAllocator
         // (possibly to be reused by an unrelated CreateTask call). Wait on our OWN flag instead,
